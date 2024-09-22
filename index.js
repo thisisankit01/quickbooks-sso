@@ -18,7 +18,7 @@ app.get('/auth', (req, res) => {
     try {
         const authUri = oauthClient.authorizeUri({
             scope: [OAuthClient.scopes.Accounting, OAuthClient.scopes.OpenId],
-            state: 'Init' // State to protect against CSRF attacks
+            state: 'Init'
         });
         res.redirect(authUri);
     } catch (error) {
@@ -29,15 +29,30 @@ app.get('/auth', (req, res) => {
 app.get('/callback', async (req, res) => {
     const parseRedirect = req.url;
     try {
-        const authResponse = await oauthClient.createToken(parseRedirect);
-        console.log(authResponse);
-        res.send('<script>window.close();</script>');
+      const authResponse = await oauthClient.createToken(parseRedirect);
+      console.log(authResponse);
+  
+      // Send success message back to parent window
+      res.send(`
+        <script>
+          window.opener.postMessage('authSuccess', '*');
+          window.close();
+        </script>
+      `);
     } catch (error) {
-        console.error("callback error :" , error);
+      console.error("callback error:", error);
+  
+      // Send failure message back to parent window
+      res.send(`
+        <script>
+          window.opener.postMessage('authFailure', '*');
+          window.close();
+        </script>
+      `);
     }
-});
+  });
 
-// Start the Express server
-app.listen(port, () => {
-    console.log(`Server started on port: ${port}`);
-});
+  app.listen(port , () => {
+    console.log(`server is listening to port ${port}`)
+  })
+  
